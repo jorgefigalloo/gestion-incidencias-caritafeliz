@@ -1,0 +1,56 @@
+Estructura de Carpetas con Asistente Inteligente
+/clinicacaritafeliz-gestion/
+├── generate_report.php
+├── fpdf.php
+├── assets/
+│   ├── css/
+│   │   ├── main.css      // estilo para index
+│   │   ├── login.css     // estilo para login
+│   │   ├── areas.css     // estilo para el  views areas
+│   │   ├── sedes.css     // estilo para el views sedes
+│   │   ├── usuario.css   // estilo para el views  usuario
+│   │   ├── tipo_incidencias.css // estilo para el views  tipo de incidencias
+│   │   └── chat.css      // Nuevo estilo para el chat
+│   └── images/
+│       └── logo.png
+├── includes/
+│   ├── PHPMailer-master/
+│   │   └── src/
+│   │       ├── Exception.php
+│   │       ├── PHPMailer.php
+│   │       └── SMTP.php
+│   ├── enviar.php
+│   ├── email_notifier.php
+│   ├── footer.php
+│   └── header.php
+│   
+├── views/
+│   ├── index.php        // Formulario público para reportar incidencias, boton tambien para lleve al login y otro boton al dashboard depende del tipo de usuario 
+│   ├── login.php        // Formulario de inicio de sesión y mande al index
+│   └── dashboard.php    // Panel principal para técnicos y admins las incidencias y sacar reportes, **con chat integrado**
+│   └── sedes.php        // Panel crud de sedes
+│   └── areas.php        // Panel crud de areas
+│   └── incidencias.php        // Panel crud de incidencias
+│   └── rol_usuario.php        // Panel crud de rol de usuarios
+│   └── usuario.php      // Panel crud de usuarios
+│   └── respuesta.php      // Panel crud de usuarios
+│   └── tipo_incidencia.php // Panel crud de tipo de incidencias
+│   └── graficos_reporte.php // Panel para ver mas graficos y poder filtrar para diferentes casos
+└── api/
+    ├── controllers/
+    │   ├── usuario.php        // Lógica para el login y manejo de usuarios
+    │   ├── incidencias.php    // Lógica para el CRUD de incidencias
+    │   ├── areas.php       // Lógica para obtener áreas
+    │   ├── rol_usuario.php       // Lógica para obtener áreas
+    │   ├── sedes.php       // Lógica para obtener sedes
+    │   ├── tipos_incidencia.php // Nuevo controlador para la gestión de tipos de incidencia
+    │   └── chat.php        // Nuevo controlador para la lógica del asistente inteligente
+    └── models/
+        ├── database.php    // Conexión a la base de datos
+        ├── Usuario.php     // Modelo para la tabla de usuarios
+        ├── Incidencia.php  // Modelo para la tabla de incidencias
+        ├── Sede.php        // Modelo para la tabla de sedes
+        ├── Area.php        // Modelo para la tabla de áreas
+        ├── RolUsuario.php        // Modelo para la tabla de áreas
+        └── TipoIncidencia.php // Modelo para la tabla de tipos de incidencia
+        └── Gemini.php      // Nuevo modelo para interactuar con la API de Gemini

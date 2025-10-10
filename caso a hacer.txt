@@ -1,0 +1,309 @@
+vamos hacer el proyecto pasarlo ya a un sistema web , en visual code :
+
+
+
+este es el proyecto :
+“Desarrollo de un sistema web para la gestión de incidencias informáticas con asistente inteligente en la Clínica Clarita Feliz – Piura 2025”
+
+primero haremos un login y el caso de gestión de incidencias ,
+algo sencillo , html, php, js,css , para poder no hacerlo tan extenso 
+
+para el asistente inteligente para verlo mas adelante
+
+curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" \
+  -H 'Content-Type: application/json' \
+  -H 'X-goog-api-key: GEMINI_API_KEY' \  api key :AIzaSyBrPWN9kfpsR_HMxwQDsSIElki-bLsuZd0
+  -X POST \
+  -d '{
+    "contents": [
+      {
+        "parts": [
+          {
+            "text": "Explain how AI works in a few words"
+          }
+        ]
+      }
+    ]
+  }'
+ private $geminiApiKey = 'AIzaSyBrPWN9kfpsR_HMxwQDsSIElki-bLsuZd0'; // Asegurado que esta línea esté limpia
+
+
+
+algo rapido y bonito para presentar 
+
+
+
+comencemos desde la bd , ya tengo la idea mas clara
+
+
+
+-- Script SQL para la Base de Datos gestion_ti_clarita
+
+-- Creación de la base de datos
+CREATE DATABASE IF NOT EXISTS gestion_ti_clarita;
+USE gestion_ti_clarita;
+
+-- 1. Tabla de Sedes
+CREATE TABLE sedes (
+    id_sede INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_sede VARCHAR(50) NOT NULL UNIQUE, -- 'Sede 1039', 'Sede 925'
+    descripcion VARCHAR(255)
+);
+
+-- 2. Tabla de Áreas
+CREATE TABLE areas (
+    id_area INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_area VARCHAR(100) NOT NULL, -- Ej: 'Gerencia', 'Facturacion', 'Piso 1'
+    id_sede INT,
+    FOREIGN KEY (id_sede) REFERENCES sedes(id_sede)
+);
+
+-- 3. Tabla de Roles de Usuario
+-- Esta tabla almacena los roles disponibles en el sistema.
+CREATE TABLE rol_usuario (
+    id_rol INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_rol VARCHAR(20) NOT NULL UNIQUE -- Ej: 'admin', 'tecnico', 'usuario'
+);
+
+-- 4. Tabla de Usuarios
+-- La columna ID_ROL_USUARIO ahora es una clave foránea a la tabla rol_usuario.
+CREATE TABLE usuarios (
+    id_usuario INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_completo VARCHAR(100) NOT NULL,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    ID_ROL_USUARIO INT NOT NULL,
+    id_area INT,
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
+    FOREIGN KEY (ID_ROL_USUARIO) REFERENCES rol_usuario(id_rol),
+    FOREIGN KEY (id_area) REFERENCES areas(id_area) ON DELETE SET NULL
+);
+
+-- 5. Tabla de Tipos de Incidencia
+CREATE TABLE tipos_incidencia (
+    id_tipo_incidencia INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- 6. Tabla de Incidencias
+CREATE TABLE incidencias (
+    id_incidencia INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    respuesta_solucion TEXT,
+    id_tipo_incidencia INT,
+    id_usuario_reporta INT NULL,
+    nombre_reporta VARCHAR(100) NULL,
+    email_reporta VARCHAR(100) NULL,
+    estado ENUM('abierta', 'en_proceso', 'cerrada', 'cancelada') DEFAULT 'abierta',
+    prioridad ENUM('baja', 'media', 'alta', 'critica') DEFAULT 'media',
+    fecha_reporte TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_cierre TIMESTAMP NULL,
+    id_usuario_tecnico INT NULL,
+    FOREIGN KEY (id_tipo_incidencia) REFERENCES tipos_incidencia(id_tipo_incidencia) ON DELETE SET NULL,
+    FOREIGN KEY (id_usuario_reporta) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
+    FOREIGN KEY (id_usuario_tecnico) REFERENCES usuarios(id_usuario) ON DELETE SET NULL
+);
+
+-- Datos de prueba para empezar
+INSERT INTO sedes (nombre_sede, descripcion) VALUES
+('Sede 1039', 'Edificio de 6 pisos'),
+('Sede 925', 'Sede de 3 pisos, gerencia, facturación, tesorería, contabilidad, etc.');
+
+-- Es necesario insertar el área de 'Sistemas' primero para que el usuario 'admin' pueda referenciarla
+INSERT INTO areas (nombre_area, id_sede) VALUES
+('Gerencia', 2),
+('Facturación', 2),
+('Tesoreria', 2),
+('Contabilidad', 2),
+('Financiera', 2),
+('Piso 1', 1),
+('Piso 2', 1),
+('Piso 3', 1),
+('Piso 4', 1),
+('Piso 5', 1),
+('Piso 6', 1),
+('Sistemas', 1);
+
+INSERT INTO tipos_incidencia (nombre) VALUES
+('Fallo de Hardware'),
+('Problema de Software'),
+('Conectividad de Red'),
+('Mantenimiento Preventivo');
+
+-- Insertamos los roles
+INSERT INTO rol_usuario (nombre_rol) VALUES
+('admin'),
+('tecnico'),
+('usuario');
+
+
+-- Se inserta el usuario 'admin'
+INSERT INTO usuarios (nombre_completo, username, password, ID_ROL_USUARIO, id_area, estado)
+VALUES (
+    'Administrador de Sistemas',
+    'admin',
+    'admin',
+    (SELECT id_rol FROM rol_usuario WHERE nombre_rol = 'admin'),
+    (SELECT id_area FROM areas WHERE nombre_area = 'Sistemas'),
+    'activo'
+);
+
+-- Insertar usuario técnico
+INSERT INTO usuarios (nombre_completo, username, password, ID_ROL_USUARIO, id_area, estado)
+VALUES (
+    'Técnico de Soporte',
+    'tecnico',
+    'tecnico',
+    (SELECT id_rol FROM rol_usuario WHERE nombre_rol = 'tecnico'),
+    (SELECT id_area FROM areas WHERE nombre_area = 'Sistemas'),
+    'activo'
+);
+
+-- Insertar usuario normal
+INSERT INTO usuarios (nombre_completo, username, password, ID_ROL_USUARIO, id_area, estado)
+VALUES (
+    'Usuario Final',
+    'usuario',
+    'usuario',
+    (SELECT id_rol FROM rol_usuario WHERE nombre_rol = 'usuario'),
+    (SELECT id_area FROM areas WHERE nombre_area = 'Gerencia'),
+    'activo'
+);
+
+---------------------------------
+
+
+estaba pensando en  quien registra la incidiencia pero no vincular con el usuario q se loggea , es decir cualquier persona , lo que quiero es un pagina principal para que cualquier area o persona pueda registrar las incidencias, y llegue por a un o dos correos q pondre uno es helpdesk@clinicacaritafeliz.com , tambien un login, y al entrar tambien pueda ingresar incidencias , y ver reportes y filtrar , generar reportes , tambien poder tener modulos de crear , modificar , actualizar y eliminar registro de cada tabla de la bd, 
+
+
+
+
+¡Qué gran idea! Incorporar un asistente inteligente es un paso excelente para modernizar el sistema y hacerlo más eficiente. El cambio de nombre del proyecto es muy acertado y el plan de usar la API de Gemini es la mejor opción.
+
+Para integrar esta nueva funcionalidad de manera organizada y segura, propongo una pequeña reorganización de tu estructura actual. El objetivo es mantener el código del chat separado de la lógica principal, siguiendo el patrón de diseño que ya estás usando.
+
+Aquí tienes la nueva estructura de carpetas y una explicación de los cambios.
+
+
+
+Estructura de Carpetas con Asistente Inteligente
+/clinicacaritafeliz-gestion/
+├── generate_report.php
+├── fpdf.php
+├── assets/
+│   ├── css/
+│   │   ├── main.css      // estilo para index
+│   │   ├── login.css     // estilo para login
+│   │   ├── areas.css     // estilo para el  views areas
+│   │   ├── sedes.css     // estilo para el views sedes
+│   │   ├── usuario.css   // estilo para el views  usuario
+│   │   ├── tipo_incidencias.css // estilo para el views  tipo de incidencias
+│   │   └── chat.css      // Nuevo estilo para el chat
+│   └── images/
+│       └── logo.png
+├── includes/
+│   ├── PHPMailer-master/
+│   │   └── src/
+│   │       ├── Exception.php
+│   │       ├── PHPMailer.php
+│   │       └── SMTP.php
+│   ├── enviar.php
+│   ├── email_notifier.php
+│   ├── footer.php
+│   └── header.php
+│   
+├── views/
+│   ├── index.php        // Formulario público para reportar incidencias, boton tambien para lleve al login y otro boton al dashboard depende del tipo de usuario 
+│   ├── login.php        // Formulario de inicio de sesión y mande al index
+│   └── dashboard.php    // Panel principal para técnicos y admins las incidencias y sacar reportes, **con chat integrado**
+│   └── sedes.php        // Panel crud de sedes
+│   └── areas.php        // Panel crud de areas
+│   └── incidencias.php        // Panel crud de incidencias
+│   └── rol_usuario.php        // Panel crud de rol de usuarios
+│   └── usuario.php      // Panel crud de usuarios
+│   └── respuesta.php      // Panel crud de usuarios
+│   └── tipo_incidencia.php // Panel crud de tipo de incidencias
+│   └── graficos_reporte.php // Panel para ver mas graficos y poder filtrar para diferentes casos
+└── api/
+    ├── controllers/
+    │   ├── usuario.php        // Lógica para el login y manejo de usuarios
+    │   ├── incidencias.php    // Lógica para el CRUD de incidencias
+    │   ├── areas.php       // Lógica para obtener áreas
+    │   ├── rol_usuario.php       // Lógica para obtener áreas
+    │   ├── sedes.php       // Lógica para obtener sedes
+    │   ├── tipos_incidencia.php // Nuevo controlador para la gestión de tipos de incidencia
+    │   └── chat.php        // Nuevo controlador para la lógica del asistente inteligente
+    └── models/
+        ├── database.php    // Conexión a la base de datos
+        ├── Usuario.php     // Modelo para la tabla de usuarios
+        ├── Incidencia.php  // Modelo para la tabla de incidencias
+        ├── Sede.php        // Modelo para la tabla de sedes
+        ├── Area.php        // Modelo para la tabla de áreas
+        ├── RolUsuario.php        // Modelo para la tabla de áreas
+        └── TipoIncidencia.php // Modelo para la tabla de tipos de incidencia
+        └── Gemini.php      // Nuevo modelo para interactuar con la API de Gemini
+
+
+
+
+
+    └── models/
+        ├── database.php        // Conexión a la base de datos
+
+codigo :
+
+<?php
+// Clase para gestionar la conexión a la base de datos
+class Database {
+    // Credenciales de la base de datos
+    private $host = "localhost";
+    private $db_name = "gestion_ti_clarita";
+    private $username = "root"; // ¡Importante! Cambia esto si usas otro usuario
+    private $password = "";     // ¡Importante! Cambia esto si tienes otra contraseña
+    public $conn;
+
+    /**
+     * Obtiene la conexión a la base de datos
+     * @return PDO|null La conexión si es exitosa, o null si falla
+     */
+    public function getConnection(){
+        $this->conn = null;
+        try {
+            // Se crea una nueva instancia de PDO para la conexión
+            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
+            
+            // Se configura el manejo de errores para que PDO lance excepciones
+            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // Se establece el juego de caracteres a UTF8 para evitar problemas de codificación
+            $this->conn->exec("set names utf8");
+        } catch(PDOException $exception){
+            // En caso de error, muestra un mensaje y termina el script
+            echo "Error de conexión a la base de datos: " . $exception->getMessage();
+        }
+        return $this->conn;
+    }
+}
+
+
+?>
+
+
+hice la prueba y genial
+
+¡Conexión a la base de datos exitosa!
+
+
+
+
+
+
+
+
+
+sigamos con la estructura de los models 
+
+
+
+

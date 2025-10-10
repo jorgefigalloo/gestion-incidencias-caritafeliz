@@ -1,0 +1,132 @@
+-- Script SQL para la Base de Datos gestion_ti_clarita
+
+-- Creación de la base de datos
+CREATE DATABASE IF NOT EXISTS gestion_ti_clarita;
+USE gestion_ti_clarita;
+
+-- 1. Tabla de Sedes
+CREATE TABLE sedes (
+    id_sede INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_sede VARCHAR(50) NOT NULL UNIQUE, -- 'Sede 1039', 'Sede 925'
+    descripcion VARCHAR(255)
+);
+
+-- 2. Tabla de Áreas
+CREATE TABLE areas (
+    id_area INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_area VARCHAR(100) NOT NULL, -- Ej: 'Gerencia', 'Facturacion', 'Piso 1'
+    id_sede INT,
+    FOREIGN KEY (id_sede) REFERENCES sedes(id_sede)
+);
+
+-- 3. Tabla de Roles de Usuario
+-- Esta tabla almacena los roles disponibles en el sistema.
+CREATE TABLE rol_usuario (
+    id_rol INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_rol VARCHAR(20) NOT NULL UNIQUE -- Ej: 'admin', 'tecnico', 'usuario'
+);
+
+-- 4. Tabla de Usuarios
+-- La columna 'estado' se cambia a BOOLEAN para ser más eficiente.
+CREATE TABLE usuarios (
+    id_usuario INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_completo VARCHAR(100) NOT NULL,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    ID_ROL_USUARIO INT NOT NULL,
+    id_area INT,
+    estado BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (ID_ROL_USUARIO) REFERENCES rol_usuario(id_rol),
+    FOREIGN KEY (id_area) REFERENCES areas(id_area) ON DELETE SET NULL
+);
+
+-- 5. Tabla de Tipos de Incidencia
+CREATE TABLE tipos_incidencia (
+    id_tipo_incidencia INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- 6. Tabla de Incidencias
+CREATE TABLE incidencias (
+    id_incidencia INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    respuesta_solucion TEXT,
+    id_tipo_incidencia INT,
+    id_usuario_reporta INT NULL,
+    nombre_reporta VARCHAR(100) NULL,
+    email_reporta VARCHAR(100) NULL,
+    estado ENUM('abierta', 'en_proceso', 'cerrada', 'cancelada') DEFAULT 'abierta',
+    prioridad ENUM('baja', 'media', 'alta', 'critica') DEFAULT 'media',
+    fecha_reporte TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_cierre TIMESTAMP NULL,
+    id_usuario_tecnico INT NULL,
+    FOREIGN KEY (id_tipo_incidencia) REFERENCES tipos_incidencia(id_tipo_incidencia) ON DELETE SET NULL,
+    FOREIGN KEY (id_usuario_reporta) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
+    FOREIGN KEY (id_usuario_tecnico) REFERENCES usuarios(id_usuario) ON DELETE SET NULL
+);
+
+-- Datos de prueba para empezar
+INSERT INTO sedes (nombre_sede, descripcion) VALUES
+('Sede 1039', 'Edificio de 6 pisos'),
+('Sede 925', 'Sede de 3 pisos, gerencia, facturación, tesorería, contabilidad, etc.');
+
+-- Es necesario insertar el área de 'Sistemas' primero para que el usuario 'admin' pueda referenciarla
+INSERT INTO areas (nombre_area, id_sede) VALUES
+('Gerencia', 2),
+('Facturación', 2),
+('Tesoreria', 2),
+('Contabilidad', 2),
+('Financiera', 2),
+('Piso 1', 1),
+('Piso 2', 1),
+('Piso 3', 1),
+('Piso 4', 1),
+('Piso 5', 1),
+('Piso 6', 1),
+('Sistemas', 1);
+
+INSERT INTO tipos_incidencia (nombre) VALUES
+('Fallo de Hardware'),
+('Problema de Software'),
+('Conectividad de Red'),
+('Mantenimiento Preventivo');
+
+-- Insertamos los roles
+INSERT INTO rol_usuario (nombre_rol) VALUES
+('admin'),
+('tecnico'),
+('usuario');
+
+-- Se inserta el usuario 'admin'
+INSERT INTO usuarios (nombre_completo, username, password, ID_ROL_USUARIO, id_area, estado)
+VALUES (
+    'Administrador de Sistemas',
+    'admin',
+    'admin',
+    (SELECT id_rol FROM rol_usuario WHERE nombre_rol = 'admin'),
+    (SELECT id_area FROM areas WHERE nombre_area = 'Sistemas'),
+    TRUE
+);
+
+-- Insertar usuario técnico
+INSERT INTO usuarios (nombre_completo, username, password, ID_ROL_USUARIO, id_area, estado)
+VALUES (
+    'Técnico de Soporte',
+    'tecnico',
+    'tecnico',
+    (SELECT id_rol FROM rol_usuario WHERE nombre_rol = 'tecnico'),
+    (SELECT id_area FROM areas WHERE nombre_area = 'Sistemas'),
+    'activo'
+);
+
+-- Insertar usuario normal
+INSERT INTO usuarios (nombre_completo, username, password, ID_ROL_USUARIO, id_area, estado)
+VALUES (
+    'Usuario Final',
+    'usuario',
+    'usuario',
+    (SELECT id_rol FROM rol_usuario WHERE nombre_rol = 'usuario'),
+    (SELECT id_area FROM areas WHERE nombre_area = 'Gerencia'),
+    'activo'
+);
