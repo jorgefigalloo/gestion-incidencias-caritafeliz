@@ -127,6 +127,29 @@ INSERT INTO `sedes` (`id_sede`, `nombre_sede`, `descripcion`) VALUES
 (3, 'secundaria', 'grndes'),
 (5, 'primero', 'buenas');
 
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `tipos_incidencia`
+--
+
+CREATE TABLE `tipos_incidencia` (
+  `id_tipo_incidencia` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `tipos_incidencia`
+--
+
+INSERT INTO `tipos_incidencia` (`id_tipo_incidencia`, `nombre`) VALUES
+(3, 'Conectividad de Red'),
+(1, 'Fallo de Hardware'),
+(4, 'Mantenimiento Preventivo'),
+(2, 'Problema de Software');
+
+
 -- --------------------------------------------------------
 
 --
@@ -168,26 +191,7 @@ INSERT INTO `subtipos_incidencias` (`id_subtipo_incidencia`, `nombre`, `descripc
 (19, 'Revisión de seguridad', 'Auditoría de seguridad informática', 4, 'activo', '2025-10-31 15:28:16'),
 (20, 'Optimización de sistema', 'Mejora del rendimiento', 4, 'activo', '2025-10-31 15:28:16');
 
--- --------------------------------------------------------
 
---
--- Estructura de tabla para la tabla `tipos_incidencia`
---
-
-CREATE TABLE `tipos_incidencia` (
-  `id_tipo_incidencia` int(11) NOT NULL,
-  `nombre` varchar(50) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `tipos_incidencia`
---
-
-INSERT INTO `tipos_incidencia` (`id_tipo_incidencia`, `nombre`) VALUES
-(3, 'Conectividad de Red'),
-(1, 'Fallo de Hardware'),
-(4, 'Mantenimiento Preventivo'),
-(2, 'Problema de Software');
 
 -- --------------------------------------------------------
 

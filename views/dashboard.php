@@ -85,6 +85,8 @@
                         <i class="fas fa-exclamation-triangle mr-3"></i>
                         Gestión Incidencias
                     </a>
+
+                    
                     
                     <a href="#" class="nav-link" data-tab="usuario">
                         <i class="fas fa-users mr-3"></i>
@@ -104,6 +106,11 @@
                     <a href="#" class="nav-link" data-tab="tipo_incidencia">
                         <i class="fas fa-tags mr-3"></i>
                         Tipos de Incidencia
+                    </a>
+
+                    <a href="#" class="nav-link" data-tab="subtipo_incidencia">
+                        <i class="fas fa-tags mr-3"></i>
+                        SubTipos de Incidencia
                     </a>
                     
                     <a href="#" class="nav-link" data-tab="rol_usuario">

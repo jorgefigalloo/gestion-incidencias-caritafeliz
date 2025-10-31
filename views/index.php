@@ -211,35 +211,50 @@
                         </div>
                     </div>
 
-                    <!-- Tipo de incidencia y prioridad -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="tipo_incidencia" class="block text-sm font-medium text-gray-700 mb-2">
-                                Tipo de Problema
-                            </label>
-                            <select 
-                                id="tipo_incidencia" 
-                                name="tipo_incidencia"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                                <option value="">Selecciona el tipo...</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label for="prioridad" class="block text-sm font-medium text-gray-700 mb-2">
-                                Prioridad
-                            </label>
-                            <select 
-                                id="prioridad" 
-                                name="prioridad"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                                <option value="baja">🟢 Baja - No es urgente</option>
-                                <option value="media" selected>🟡 Media - Moderadamente urgente</option>
-                                <option value="alta">🟠 Alta - Urgente</option>
-                                <option value="critica">🔴 Crítica - Muy urgente</option>
-                            </select>
-                        </div>
-                    </div>
+                                                <!-- Tipo de incidencia y prioridad -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="tipo_incidencia" class="block text-sm font-medium text-gray-700 mb-2">
+                                                Tipo de Problema
+                                            </label>
+                                            <select 
+                                                id="tipo_incidencia" 
+                                                name="tipo_incidencia"
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                                                <option value="">Selecciona el tipo...</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="prioridad" class="block text-sm font-medium text-gray-700 mb-2">
+                                                Prioridad
+                                            </label>
+                                            <select 
+                                                id="prioridad" 
+                                                name="prioridad"
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                                                <option value="baja">🟢 Baja - No es urgente</option>
+                                                <option value="media" selected>🟡 Media - Moderadamente urgente</option>
+                                                <option value="alta">🟠 Alta - Urgente</option>
+                                                <option value="critica">🔴 Crítica - Muy urgente</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- NUEVO: Campo de Subtipo (inicialmente oculto) -->
+                                    <div id="subtipo-container" class="hidden">
+                                        <label for="subtipo_incidencia" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Subtipo Específico
+                                        </label>
+                                        <select 
+                                            id="subtipo_incidencia" 
+                                            name="subtipo_incidencia"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                                            <option value="">Selecciona el subtipo...</option>
+                                        </select>
+                                        <small class="text-gray-500">Selecciona el problema específico</small>
+                                    </div>
+
 
                     <!-- Botones -->
                     <div class="flex flex-col sm:flex-row gap-4 pt-4">
@@ -481,17 +496,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
         // Función para limpiar sesión
         function clearUserSession() {
             localStorage.removeItem('user_session');
@@ -502,28 +506,77 @@
         }
 
         // Cargar tipos de incidencia
-        async function loadTiposIncidencia() {
-            try {
-                const response = await fetch(TIPOS_API);
-                if (!response.ok) throw new Error('Error al cargar tipos');
-                
-                const result = await response.json();
-                const tipoSelect = document.getElementById('tipo_incidencia');
-                
-                tipoSelect.innerHTML = '<option value="">Selecciona el tipo...</option>';
-                
-                if (result.records && result.records.length > 0) {
-                    result.records.forEach(tipo => {
-                        const option = document.createElement('option');
-                        option.value = tipo.id_tipo_incidencia;
-                        option.textContent = tipo.nombre;
-                        tipoSelect.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error('Error al cargar tipos:', error);
-            }
-        }
+            // En el JavaScript de index.php, actualiza estas funciones:
+
+                    // Cargar tipos de incidencia (ya existe, pero asegúrate de agregar el event listener)
+                    async function loadTiposIncidencia() {
+                        try {
+                            const response = await fetch(TIPOS_API);
+                            if (!response.ok) throw new Error('Error al cargar tipos');
+                            
+                            const result = await response.json();
+                            const tipoSelect = document.getElementById('tipo_incidencia');
+                            
+                            tipoSelect.innerHTML = '<option value="">Selecciona el tipo...</option>';
+                            
+                            if (result.records && result.records.length > 0) {
+                                result.records.forEach(tipo => {
+                                    const option = document.createElement('option');
+                                    option.value = tipo.id_tipo_incidencia;
+                                    option.textContent = tipo.nombre;
+                                    tipoSelect.appendChild(option);
+                                });
+                            }
+                            
+                            // NUEVO: Agregar event listener para cargar subtipos
+                            tipoSelect.addEventListener('change', loadSubtiposByTipo);
+                        } catch (error) {
+                            console.error('Error al cargar tipos:', error);
+                        }
+                    }
+
+                    // NUEVA FUNCIÓN: Cargar subtipos según el tipo seleccionado
+                    async function loadSubtiposByTipo() {
+                        const tipoSelect = document.getElementById('tipo_incidencia');
+                        const subtipoSelect = document.getElementById('subtipo_incidencia');
+                        const subtipoContainer = document.getElementById('subtipo-container');
+                        
+                        const tipoId = tipoSelect.value;
+                        
+                        // Si no hay tipo seleccionado, ocultar subtipos
+                        if (!tipoId) {
+                            subtipoContainer.classList.add('hidden');
+                            subtipoSelect.innerHTML = '<option value="">Selecciona primero un tipo...</option>';
+                            return;
+                        }
+                        
+                        try {
+                            const response = await fetch(`../api/controllers/subtipos_incidencias.php?action=by_tipo&id_tipo=${tipoId}`);
+                            const result = await response.json();
+                            
+                            subtipoSelect.innerHTML = '<option value="">Selecciona el subtipo...</option>';
+                            
+                            if (result.subtipos && result.subtipos.length > 0) {
+                                result.subtipos.forEach(subtipo => {
+                                    const option = document.createElement('option');
+                                    option.value = subtipo.id_subtipo_incidencia;
+                                    option.textContent = subtipo.nombre;
+                                    subtipoSelect.appendChild(option);
+                                });
+                                subtipoContainer.classList.remove('hidden');
+                            } else {
+                                subtipoContainer.classList.add('hidden');
+                                showToast('No hay subtipos disponibles para este tipo', 'info');
+                            }
+                        } catch (error) {
+                            console.error('Error al cargar subtipos:', error);
+                            subtipoContainer.classList.add('hidden');
+                        }
+                    }
+
+
+
+
 
         // Cargar estadísticas básicas
         async function loadStats() {
@@ -619,17 +672,17 @@
         incidentForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const formData = new FormData(incidentForm);
-            const data = {
-                titulo: formData.get('titulo').trim(),
-                descripcion: formData.get('descripcion').trim(),
-                nombre_reporta: formData.get('nombre_reporta').trim(),
-                email_reporta: formData.get('email_reporta').trim(),
-                id_tipo_incidencia: formData.get('tipo_incidencia') || null,
-                prioridad: formData.get('prioridad') || 'media',
-                estado: 'abierta',
-                id_usuario_reporta: currentUser ? currentUser.id : null
-            };
+                            const data = {
+                    titulo: formData.get('titulo').trim(),
+                    descripcion: formData.get('descripcion').trim(),
+                    nombre_reporta: formData.get('nombre_reporta').trim(),
+                    email_reporta: formData.get('email_reporta').trim(),
+                    id_tipo_incidencia: formData.get('tipo_incidencia') || null,
+                    id_subtipo_incidencia: formData.get('subtipo_incidencia') || null, // NUEVO
+                    prioridad: formData.get('prioridad') || 'media',
+                    estado: 'abierta',
+                    id_usuario_reporta: currentUser ? currentUser.id : null
+                };
 
             // Validaciones
             if (!data.titulo) {
