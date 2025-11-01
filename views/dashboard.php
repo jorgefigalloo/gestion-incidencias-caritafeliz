@@ -69,13 +69,11 @@
                     Responder Incidencias
                 </a>
                 
-                <!-- NUEVO: Reportes Avanzados - admin y técnico -->
-                    <a href="#" id="reportes-tab" class="nav-link" data-tab="reportes">
-                        <i class="fas fa-chart-line mr-3"></i>
-                        Reportes Avanzados
-                    </a>
-
-
+                <!-- Reportes Avanzados - admin y técnico -->
+                <a href="#" id="reportes-tab" class="nav-link" data-tab="reportes">
+                    <i class="fas fa-chart-line mr-3"></i>
+                    Reportes Avanzados
+                </a>
 
                 <!-- Secciones solo para admin -->
                 <div id="admin-section" class="hidden">
@@ -85,8 +83,6 @@
                         <i class="fas fa-exclamation-triangle mr-3"></i>
                         Gestión Incidencias
                     </a>
-
-                    
                     
                     <a href="#" class="nav-link" data-tab="usuario">
                         <i class="fas fa-users mr-3"></i>
@@ -109,7 +105,7 @@
                     </a>
 
                     <a href="#" class="nav-link" data-tab="subtipo_incidencia">
-                        <i class="fas fa-tags mr-3"></i>
+                        <i class="fas fa-tag mr-3"></i>
                         SubTipos de Incidencia
                     </a>
                     
@@ -159,14 +155,6 @@
                     </div>
                 </div>
 
-                <!-- Botón para abrir modal de más gráficos 
-                <div class="flex justify-end mb-4">
-                        <button id="open-charts-modal" 
-                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200">
-                            <i class="fas fa-chart-pie mr-2"></i> Ver más gráficos
-                        </button>
-                    </div>-->
-
                 <!-- Incidencias Recientes -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Incidencias Recientes</h3>
@@ -174,13 +162,7 @@
                         <!-- Se llenarán dinámicamente -->
                     </div>
                 </div>
-
-                
             </div>
-
-           
-
-            
 
             <!-- Contenido dinámico para otras pestañas -->
             <div id="dynamic-content" class="tab-content hidden">
@@ -234,31 +216,6 @@
         </div>
     </div>
 
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     <!-- Overlay para cerrar sidebar en mobile -->
     <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-10 hidden lg:hidden"></div>
 
@@ -276,11 +233,6 @@
 
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
-
-
-
-                      
-
 
     <style>
         .nav-link {
@@ -334,6 +286,7 @@
         // Tabs
         const dashboardTab = document.getElementById('dashboard-tab');
         const respuestaTab = document.getElementById('respuesta-tab');
+        const reportesTab = document.getElementById('reportes-tab');
         const adminSection = document.getElementById('admin-section');
         
         // Content areas
@@ -357,107 +310,76 @@
             }, 3000);
         }
 
-        // Verificar autenticación y permisos - CORREGIDO
+        // Verificar autenticación y permisos
         function checkAuthentication() {
             const userSession = localStorage.getItem('user_session') || sessionStorage.getItem('user_session');
             
             if (!userSession) {
-                console.log('No hay sesión de usuario');
                 accessDenied.classList.remove('hidden');
                 return false;
             }
 
             try {
                 const session = JSON.parse(userSession);
-                console.log('Sesión encontrada:', session); // Debug
                 
-                // Verificar que tenga los campos mínimos necesarios - CORREGIDO
                 if (!session.username) {
-                    console.log('Sesión inválida: sin username');
                     accessDenied.classList.remove('hidden');
                     return false;
                 }
                 
-                // Verificar tiempo de sesión
                 if (session.loginTime) {
                     const currentTime = new Date().getTime();
-                    const loginTime = session.loginTime;
-                    const timeDiff = currentTime - loginTime;
+                    const timeDiff = currentTime - session.loginTime;
                     
-                    // Verificar que la sesión sea válida (menos de 24 horas)
                     if (timeDiff >= 24 * 60 * 60 * 1000) {
-                        console.log('Sesión expirada');
                         clearUserSession();
                         accessDenied.classList.remove('hidden');
                         return false;
                     }
                 }
                 
-                // Verificar que sea técnico o admin
                 if (session.rol !== 'admin' && session.rol !== 'tecnico') {
-                    console.log('Usuario sin permisos para dashboard:', session.rol);
-                    // Redirigir a index para usuarios normales
                     showToast('Los usuarios normales no pueden acceder al dashboard', 'error');
-                    setTimeout(() => {
-                        window.location.href = 'index.php';
-                    }, 2000);
+                    setTimeout(() => window.location.href = 'index.php', 2000);
                     return false;
                 }
                 
                 currentUser = session;
                 isAdmin = session.rol === 'admin';
-                console.log('Usuario autenticado:', currentUser); // Debug
                 updateUI();
                 return true;
             } catch (e) {
-                console.error('Error parseando sesión:', e);
                 clearUserSession();
                 accessDenied.classList.remove('hidden');
                 return false;
             }
         }
 
-        // Actualizar UI según permisos - CORREGIDO
+        // Actualizar UI según permisos
         function updateUI() {
-            if (!currentUser) {
-                console.log('No hay currentUser para actualizar UI');
-                return;
-            }
+            if (!currentUser) return;
             
-            console.log('Actualizando UI con usuario:', currentUser); // Debug
-            
-            // Obtener el nombre del usuario - CORREGIDO
             let displayName = 'Usuario Desconocido';
-            if (currentUser.nombre_completo) {
-                displayName = currentUser.nombre_completo;
-            } else if (currentUser.nombre) {
-                displayName = currentUser.nombre;
-            } else if (currentUser.username) {
-                displayName = currentUser.username;
-            }
+            if (currentUser.nombre_completo) displayName = currentUser.nombre_completo;
+            else if (currentUser.nombre) displayName = currentUser.nombre;
+            else if (currentUser.username) displayName = currentUser.username;
             
             userName.textContent = displayName;
             userRole.textContent = currentUser.rol.toUpperCase();
             
-            // Cambiar color del rol
             const roleColors = {
                 'admin': 'bg-red-100 text-red-800',
                 'tecnico': 'bg-blue-100 text-blue-800'
             };
             
-            // Limpiar clases anteriores y aplicar nuevas
             userRole.className = `text-xs px-2 py-1 rounded-full ${roleColors[currentUser.rol] || 'bg-gray-100 text-gray-800'}`;
             
-            // Mostrar/ocultar sección de admin
             if (isAdmin) {
                 adminSection.classList.remove('hidden');
-                console.log('Mostrando sección de admin');
             } else {
                 adminSection.classList.add('hidden');
-                console.log('Ocultando sección de admin - usuario técnico');
             }
             
-            // Ocultar mensaje de acceso denegado si está visible
             accessDenied.classList.add('hidden');
         }
 
@@ -552,105 +474,80 @@
             `;
         }
 
+        // Variables globales para guardar las instancias de Chart.js
+        let priorityChartInstance = null;
+        let statusChartInstance = null;
+
         // Renderizar gráficos
-            // Renderizar gráficos
-        
-                // Variables globales para guardar las instancias de Chart.js
-                let priorityChartInstance = null;
-                let trendsChartInstance = null;
-                let statusChartInstance = null;
+        function renderCharts(stats) {
+            if (!stats.por_estado) return;
 
-                // Renderizar gráficos
-                function renderCharts(stats) {
-                    if (!stats.por_estado) return;
+            // Gráfico de estados
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            const statusData = {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#6b7280']
+                }]
+            };
 
-                    // ======================
-                    // Gráfico de estados
-                    // ======================
-                    const statusCtx = document.getElementById('statusChart').getContext('2d');
-                    const statusData = {
-                        labels: [],
-                        datasets: [{
-                            data: [],
-                            backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#6b7280']
-                        }]
-                    };
+            stats.por_estado.forEach(estado => {
+                statusData.labels.push(estado.estado.replace('_', ' ').toUpperCase());
+                statusData.datasets[0].data.push(estado.count);
+            });
 
-                    stats.por_estado.forEach(estado => {
-                        statusData.labels.push(estado.estado.replace('_', ' ').toUpperCase());
-                        statusData.datasets[0].data.push(estado.count);
-                    });
+            if (statusChartInstance) {
+                statusChartInstance.destroy();
+            }
 
-                    // 🔹 Si ya existe un gráfico, destruirlo antes de crear otro
-                    if (statusChartInstance) {
-                        statusChartInstance.destroy();
-                    }
-
-                    statusChartInstance = new Chart(statusCtx, {
-                        type: 'doughnut',
-                        data: statusData,
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom'
-                                }
-                            }
+            statusChartInstance = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: statusData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
                         }
-                    });
-
-                    // ======================
-                    // Gráfico de prioridades
-                    // ======================
-                    if (stats.por_prioridad) {
-                        const priorityCtx = document.getElementById('priorityChart').getContext('2d');
-                        const priorityData = {
-                            labels: [],
-                            datasets: [{
-                                data: [],
-                                backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444']
-                            }]
-                        };
-
-                        stats.por_prioridad.forEach(prioridad => {
-                            priorityData.labels.push(prioridad.prioridad.toUpperCase());
-                            priorityData.datasets[0].data.push(prioridad.count);
-                        });
-
-                        // 🔹 Destruir gráfico previo antes de crear otro
-                        if (priorityChartInstance) {
-                            priorityChartInstance.destroy();
-                        }
-
-                        priorityChartInstance = new Chart(priorityCtx, {
-                            type: 'bar',
-                            data: priorityData,
-                            options: {
-                                responsive: true,
-                                plugins: {
-                                    legend: {
-                                        display: false
-                                    }
-                                }
-                            }
-                        });
                     }
                 }
+            });
 
+            // Gráfico de prioridades
+            if (stats.por_prioridad) {
+                const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+                const priorityData = {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444']
+                    }]
+                };
 
+                stats.por_prioridad.forEach(prioridad => {
+                    priorityData.labels.push(prioridad.prioridad.toUpperCase());
+                    priorityData.datasets[0].data.push(prioridad.count);
+                });
 
+                if (priorityChartInstance) {
+                    priorityChartInstance.destroy();
+                }
 
-
-
-
-
-
-
-
-
-
-
-
+                priorityChartInstance = new Chart(priorityCtx, {
+                    type: 'bar',
+                    data: priorityData,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
 
         // Cargar incidencias recientes
         async function loadRecentIncidents() {
@@ -666,7 +563,7 @@
             }
         }
 
-        // Renderizar incidencias recientes
+        // Renderizar incidencias recientes - ACTUALIZADO CON SUBTIPOS
         function renderRecentIncidents(incidents) {
             const container = document.getElementById('recent-incidents');
             
@@ -675,24 +572,37 @@
                 return;
             }
             
-            container.innerHTML = incidents.map(incident => `
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div class="flex-1">
-                        <h4 class="font-medium text-gray-800">#${incident.id_incidencia} - ${incident.titulo}</h4>
-                        <p class="text-sm text-gray-600 line-clamp-2">${incident.descripcion}</p>
-                        <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                            <span>Reportado: ${formatDate(incident.fecha_reporte)}</span>
-                            <span class="px-2 py-1 rounded-full ${getEstadoClass(incident.estado)}">${incident.estado.replace('_', ' ').toUpperCase()}</span>
-                            <span class="px-2 py-1 rounded-full ${getPrioridadClass(incident.prioridad)}">${incident.prioridad.toUpperCase()}</span>
+            container.innerHTML = incidents.map(incident => {
+                const tipoHtml = incident.tipo_nombre ? 
+                    `<span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${incident.tipo_nombre}</span>` : 
+                    '<span class="text-gray-500 text-xs">Sin tipo</span>';
+                
+                const subtipoHtml = incident.subtipo_nombre ? 
+                    `<span class="ml-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">${incident.subtipo_nombre}</span>` : '';
+                
+                return `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition duration-200">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-800">#${incident.id_incidencia} - ${incident.titulo}</h4>
+                            <p class="text-sm text-gray-600 line-clamp-2">${incident.descripcion}</p>
+                            <div class="flex items-center flex-wrap gap-2 mt-2 text-xs text-gray-500">
+                                <span>Reportado: ${formatDate(incident.fecha_reporte)}</span>
+                                <span class="px-2 py-1 rounded-full ${getEstadoClass(incident.estado)}">${incident.estado.replace('_', ' ').toUpperCase()}</span>
+                                <span class="px-2 py-1 rounded-full ${getPrioridadClass(incident.prioridad)}">${incident.prioridad.toUpperCase()}</span>
+                            </div>
+                            <div class="flex items-center gap-1 mt-2">
+                                ${tipoHtml}
+                                ${subtipoHtml}
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <button onclick="viewIncident(${incident.id_incidencia})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition duration-200">
+                                <i class="fas fa-eye mr-1"></i>Ver
+                            </button>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <button onclick="viewIncident(${incident.id_incidencia})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
-                            Ver
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Funciones auxiliares
@@ -728,13 +638,11 @@
         }
 
         // Navegación entre tabs
-                function switchTab(tabName) {
-            // Remover clase active de todos los nav-links
+        function switchTab(tabName) {
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
             });
             
-            // Ocultar todos los contenidos
             dashboardContent.classList.add('hidden');
             dynamicContent.classList.add('hidden');
             
@@ -746,11 +654,10 @@
             } else if (tabName === 'respuesta') {
                 loadExternalContent('respuesta.php');
                 respuestaTab.classList.add('active');
-            } else if (tabName === 'reportes') {  // NUEVO
+            } else if (tabName === 'reportes') {
                 loadExternalContent('graficos_reporte.php');
-                document.getElementById('reportes-tab').classList.add('active');
+                reportesTab.classList.add('active');
             } else {
-                // Para otros CRUDs (solo admin)
                 if (isAdmin) {
                     loadExternalContent(`${tabName}.php`);
                     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
@@ -773,73 +680,56 @@
         // Ver detalles de incidencia
         function viewIncident(id) {
             switchTab('respuesta');
-            // Aquí podrías agregar lógica para mostrar la incidencia específica
         }
 
         // Generar reporte PDF
-        // Reemplaza la función generateReport() en dashboard.php:
+        async function generateReport() {
+            if (!currentUser) {
+                showToast('Error: No hay usuario autenticado', 'error');
+                return;
+            }
 
-                            // Generar reporte PDF
-                                // Generar reporte PDF
-            async function generateReport() {
-                if (!currentUser) {
-                    showToast('Error: No hay usuario autenticado', 'error');
+            try {
+                const reportBtn = document.getElementById('generate-report');
+                const originalText = reportBtn.innerHTML;
+                reportBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+                reportBtn.disabled = true;
+
+                const response = await fetch('../generate_report.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'general',
+                        user_id: currentUser.username
+                    })
+                });
+
+                reportBtn.innerHTML = originalText;
+                reportBtn.disabled = false;
+
+                if (!response.ok) {
+                    showToast('Error generando reporte', 'error');
                     return;
                 }
 
-                try {
-                    // Mostrar loading en el botón
-                    const reportBtn = document.getElementById('generate-report');
-                    const originalText = reportBtn.innerHTML;
-                    reportBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
-                    reportBtn.disabled = true;
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
 
-                    // Petición al servidor
-                    const response = await fetch('../generate_report.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 'general',
-                            user_id: currentUser.username // usar identificador del usuario
-                        })
-                    });
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'reporte_incidencias.pdf';
+                document.body.appendChild(a);
+                a.click();
 
-                    // Restaurar botón
-                    reportBtn.innerHTML = originalText;
-                    reportBtn.disabled = false;
+                a.remove();
+                window.URL.revokeObjectURL(url);
 
-                    if (!response.ok) {
-                        showToast('Error generando reporte', 'error');
-                        return;
-                    }
-
-                    // Descargar PDF si la respuesta es correcta
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'reporte_incidencias.pdf';
-                    document.body.appendChild(a);
-                    a.click();
-
-                    // Liberar memoria
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-
-                    showToast('Reporte generado correctamente', 'success');
-                } catch (error) {
-                    console.error('Error en generateReport:', error);
-                    showToast('Error al generar reporte', 'error');
-                }
+                showToast('Reporte generado correctamente', 'success');
+            } catch (error) {
+                console.error('Error en generateReport:', error);
+                showToast('Error al generar reporte', 'error');
             }
-
-
-
-
-
-
-
+        }
 
         // Chat functionality
         let isTyping = false;
@@ -910,81 +800,58 @@
             isTyping = false;
         }
 
-
-
         // Enviar mensaje al chat
-                                    async function sendChatMessage() {
-                                const message = chatInput.value.trim();
-                                if (!message) return;
-                                
-                                addChatMessage(message, true);
-                                chatInput.value = '';
-                                showTypingIndicator();
-                                
-                                try {
-                                    // Obtener sesión del usuario
-                                    const userSession = localStorage.getItem('user_session') || sessionStorage.getItem('user_session');
-                                    
-                                    if (!userSession) {
-                                        hideTypingIndicator();
-                                        addChatMessage('Error: No hay sesión activa. Por favor inicia sesión nuevamente.', false);
-                                        return;
-                                    }
-                                    
-                                    console.log('UserSession:', JSON.parse(userSession)); // Debug
-                                    const token = btoa(userSession);
-                                    console.log('Token (primeros 50 chars):', token.substring(0, 50)); // Debug
-                                    
-                                    const response = await fetch(CHAT_API, {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Authorization': `Bearer ${token}`
-                                        },
-                                        body: JSON.stringify({ message })
-                                    });
-                                    
-                                    console.log('Response status:', response.status); // Debug
-                                    console.log('Response headers:', response.headers); // Debug
-                                    
-                                    // Intentar leer el texto de la respuesta primero
-                                    const responseText = await response.text();
-                                    console.log('Response text:', responseText); // Debug
-                                    
-                                    hideTypingIndicator();
-                                    
-                                    // Intentar parsear como JSON
-                                    let result;
-                                    try {
-                                        result = JSON.parse(responseText);
-                                    } catch (jsonError) {
-                                        console.error('Error parseando JSON:', jsonError);
-                                        console.error('Respuesta recibida:', responseText);
-                                        addChatMessage('Error del servidor. Revisa la consola para más detalles.', false);
-                                        return;
-                                    }
-                                    
-                                    if (result.success) {
-                                        addChatMessage(result.reply, false);
-                                    } else {
-                                        addChatMessage(result.message || 'Lo siento, no pude procesar tu mensaje.', false);
-                                    }
-                                } catch (error) {
-                                    hideTypingIndicator();
-                                    console.error('Error en chat:', error);
-                                    addChatMessage('Error de conexión. Por favor, intenta más tarde.', false);
-                                }
-                            }
-
-
-
-
-
-
-
-
-
-
+        async function sendChatMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            addChatMessage(message, true);
+            chatInput.value = '';
+            showTypingIndicator();
+            
+            try {
+                const userSession = localStorage.getItem('user_session') || sessionStorage.getItem('user_session');
+                
+                if (!userSession) {
+                    hideTypingIndicator();
+                    addChatMessage('Error: No hay sesión activa. Por favor inicia sesión nuevamente.', false);
+                    return;
+                }
+                
+                const token = btoa(userSession);
+                
+                const response = await fetch(CHAT_API, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                const responseText = await response.text();
+                hideTypingIndicator();
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (jsonError) {
+                    console.error('Error parseando JSON:', jsonError);
+                    addChatMessage('Error del servidor. Revisa la consola para más detalles.', false);
+                    return;
+                }
+                
+                if (result.success) {
+                    addChatMessage(result.reply, false);
+                } else {
+                    addChatMessage(result.message || 'Lo siento, no pude procesar tu mensaje.', false);
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                console.error('Error en chat:', error);
+                addChatMessage('Error de conexión. Por favor, intenta más tarde.', false);
+            }
+        }
 
         // Event Listeners
         sidebarToggle.addEventListener('click', () => {
@@ -997,14 +864,11 @@
             sidebarOverlay.classList.add('hidden');
         });
 
-        
-
         // Navigation
         dashboardTab.addEventListener('click', () => switchTab('dashboard'));
         respuestaTab.addEventListener('click', () => switchTab('respuesta'));
-      //  reportesTab.addEventListener('click', () => switchTab('reportes')); // NUEVO
+        reportesTab.addEventListener('click', () => switchTab('reportes'));
 
-        
         // Admin navigation
         document.querySelectorAll('[data-tab]').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -1026,10 +890,6 @@
 
         // Report generation
         document.getElementById('generate-report').addEventListener('click', generateReport);
-             
-
-
-          
 
         // Navigation buttons
         document.getElementById('index-btn').addEventListener('click', () => {
@@ -1052,61 +912,12 @@
         window.viewIncident = viewIncident;
         window.switchTab = switchTab;
 
-        // Inicialización con debug mejorado
+        // Inicialización
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('=== DASHBOARD DEBUG DETALLADO ===');
-            
-            // Verificar qué hay en localStorage y sessionStorage
-            const localStorage_session = localStorage.getItem('user_session');
-            const sessionStorage_session = sessionStorage.getItem('user_session');
-            
-            console.log('localStorage raw:', localStorage_session);
-            console.log('sessionStorage raw:', sessionStorage_session);
-            
-            // Intentar parsear cada uno
-            if (localStorage_session) {
-                try {
-                    const parsed = JSON.parse(localStorage_session);
-                    console.log('localStorage parsed:', parsed);
-                    console.log('localStorage - nombre_completo:', parsed.nombre_completo);
-                    console.log('localStorage - nombre:', parsed.nombre);
-                    console.log('localStorage - username:', parsed.username);
-                    console.log('localStorage - rol:', parsed.rol);
-                } catch (e) {
-                    console.error('Error parseando localStorage:', e);
-                }
-            }
-            
-            if (sessionStorage_session) {
-                try {
-                    const parsed = JSON.parse(sessionStorage_session);
-                    console.log('sessionStorage parsed:', parsed);
-                    console.log('sessionStorage - nombre_completo:', parsed.nombre_completo);
-                    console.log('sessionStorage - nombre:', parsed.nombre);
-                    console.log('sessionStorage - username:', parsed.username);
-                    console.log('sessionStorage - rol:', parsed.rol);
-                } catch (e) {
-                    console.error('Error parseando sessionStorage:', e);
-                }
-            }
-            
-            console.log('================================');
-            
             if (checkAuthentication()) {
-                console.log('Autenticación exitosa, cargando dashboard...');
                 switchTab('dashboard');
-            } else {
-                console.log('Autenticación falló');
             }
         });
-
-
-
-
-      
-     
-
-
     </script>
 </body>
 </html>

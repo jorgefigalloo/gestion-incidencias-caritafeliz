@@ -271,7 +271,7 @@
         let filteredIncidencias = [];
         let tecnicos = [];
         
-        // Elementos del DOM (simplificados para iframe)
+        // Elementos del DOM
         const accessDenied = document.getElementById('access-denied');
         const loading = document.getElementById('loading');
         const incidenciasContainer = document.getElementById('incidencias-container');
@@ -314,7 +314,7 @@
             }, 3000);
         }
 
-        // Verificar autenticación y permisos (simplificado para iframe)
+        // Verificar autenticación y permisos
         function checkAuthenticationAndPermissions() {
             const userSession = localStorage.getItem('user_session') || sessionStorage.getItem('user_session');
             
@@ -330,14 +330,12 @@
                 const loginTime = session.loginTime;
                 const timeDiff = currentTime - loginTime;
                 
-                // Verificar que la sesión sea válida (menos de 24 horas)
                 if (timeDiff >= 24 * 60 * 60 * 1000) {
                     accessDenied.classList.remove('hidden');
                     loading.classList.add('hidden');
                     return false;
                 }
                 
-                // Verificar que sea técnico o admin
                 if (session.rol !== 'admin' && session.rol !== 'tecnico') {
                     accessDenied.classList.remove('hidden');
                     loading.classList.add('hidden');
@@ -351,16 +349,6 @@
                 loading.classList.add('hidden');
                 return false;
             }
-        }
-
-        // Función simplificada - no hay UI de auth para actualizar en iframe
-
-        // Eliminar funciones de navegación y sesión (no necesarias en iframe)
-        function clearUserSession() {
-            localStorage.removeItem('user_session');
-            sessionStorage.removeItem('user_session');
-            localStorage.removeItem('remember_user');
-            currentUser = null;
         }
 
         // Cargar técnicos
@@ -538,7 +526,7 @@
             });
         }
 
-        // Crear elemento de incidencia
+        // Crear elemento de incidencia - ACTUALIZADO CON SUBTIPOS
         function createIncidenciaElement(incidencia) {
             const div = document.createElement('div');
             div.className = 'p-6 hover:bg-gray-50 transition duration-200';
@@ -549,6 +537,10 @@
             const reportadoPor = incidencia.nombre_reporta || 'Usuario anónimo';
             const tecnicoAsignado = getTecnicoName(incidencia.id_usuario_tecnico);
             const tipoIncidencia = incidencia.tipo_nombre || 'Sin tipo';
+            
+            // NUEVO: Subtipo si existe
+            const subtipoIncidencia = incidencia.subtipo_nombre ? 
+                `<span class="ml-2 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">${escapeHtml(incidencia.subtipo_nombre)}</span>` : '';
 
             div.innerHTML = `
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
@@ -568,7 +560,11 @@
                         <p class="text-gray-600 mb-2 line-clamp-2">${escapeHtml(incidencia.descripcion)}</p>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-gray-500">
-                            <div><strong>Tipo:</strong> ${escapeHtml(tipoIncidencia)}</div>
+                            <div>
+                                <strong>Tipo:</strong> 
+                                <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${escapeHtml(tipoIncidencia)}</span>
+                                ${subtipoIncidencia}
+                            </div>
                             <div><strong>Reportado por:</strong> ${escapeHtml(reportadoPor)}</div>
                             <div><strong>Técnico:</strong> ${escapeHtml(tecnicoAsignado)}</div>
                             <div><strong>Fecha:</strong> ${formatDate(incidencia.fecha_reporte)}</div>
@@ -652,7 +648,7 @@
             return tecnico ? tecnico.nombre_completo : 'Sin asignar';
         }
 
-        // Abrir modal de respuesta
+        // Abrir modal de respuesta - ACTUALIZADO CON SUBTIPOS
         function openResponseModal(incidenciaId) {
             const incidencia = incidenciasData.find(i => i.id_incidencia == incidenciaId);
             if (!incidencia) return;
@@ -661,6 +657,7 @@
             const modalInfo = document.getElementById('modal-incidencia-info');
             const reportadoPor = incidencia.nombre_reporta || 'Usuario anónimo';
             const tipoIncidencia = incidencia.tipo_nombre || 'Sin tipo';
+            const subtipoIncidencia = incidencia.subtipo_nombre || null;
 
             modalInfo.innerHTML = `
                 <div class="bg-gray-50 p-4 rounded-lg mb-4">
@@ -668,7 +665,11 @@
                         <div>
                             <h4 class="font-semibold text-gray-900 mb-2">#${incidencia.id_incidencia} - ${escapeHtml(incidencia.titulo)}</h4>
                             <p class="text-sm text-gray-600 mb-2">${escapeHtml(incidencia.descripcion)}</p>
-                            <p class="text-sm"><strong>Tipo:</strong> ${escapeHtml(tipoIncidencia)}</p>
+                            <div class="flex items-center space-x-2 mb-1">
+                                <p class="text-sm"><strong>Tipo:</strong></p>
+                                <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${escapeHtml(tipoIncidencia)}</span>
+                                ${subtipoIncidencia ? `<span class="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">${escapeHtml(subtipoIncidencia)}</span>` : ''}
+                            </div>
                         </div>
                         <div>
                             <p class="text-sm mb-1"><strong>Reportado por:</strong> ${escapeHtml(reportadoPor)}</p>
@@ -691,8 +692,7 @@
             responseModal.classList.remove('hidden');
         }
 
-        // Event listeners simplificados (eliminados los de navegación)
-        // Filtros y búsqueda
+        // Event listeners
         filterEstado.addEventListener('change', applyFilters);
         filterPrioridad.addEventListener('change', applyFilters);
         filterTecnico.addEventListener('change', applyFilters);

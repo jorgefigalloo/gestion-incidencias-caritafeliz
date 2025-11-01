@@ -19,10 +19,10 @@ class EmailNotifier {
         try {
             // Configuración del servidor SMTP
             $this->mail->isSMTP();
-            $this->mail->Host = 'smtp.gmail.com'; // Cambiar según tu proveedor
+            $this->mail->Host = 'smtp.gmail.com';
             $this->mail->SMTPAuth = true;
-            $this->mail->Username = 'caritafelizapp@gmail.com'; // CAMBIAR POR TU EMAIL
-            $this->mail->Password = 'sazh jtug iuka mpyf'; // CAMBIAR POR TU CONTRASEÑA DE APLICACIÓN
+            $this->mail->Username = 'caritafelizapp@gmail.com';
+            $this->mail->Password = 'sazh jtug iuka mpyf';
             $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $this->mail->Port = 587;
             
@@ -58,9 +58,10 @@ class EmailNotifier {
                 $this->mail->addCC($incidenciaData['email_reporta'], $incidenciaData['nombre_reporta']);
             }
             
-            // Asunto
+            // Asunto con más información
             $prioridad = strtoupper($incidenciaData['prioridad']);
-            $this->mail->Subject = "[NUEVA INCIDENCIA - {$prioridad}] {$incidenciaData['titulo']}";
+            $tipoInfo = !empty($incidenciaData['tipo_nombre']) ? ' - ' . $incidenciaData['tipo_nombre'] : '';
+            $this->mail->Subject = "[NUEVA INCIDENCIA - {$prioridad}]{$tipoInfo}: {$incidenciaData['titulo']}";
             
             // Cuerpo del mensaje
             $this->mail->Body = $this->generarHTMLEmail($incidenciaData);
@@ -102,8 +103,11 @@ class EmailNotifier {
                 .label { font-weight: bold; color: #555; display: inline-block; min-width: 150px; }
                 .value { color: #333; }
                 .priority-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; background: ' . $prioridadColor . '; }
+                .type-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; background: #3b82f6; color: white; font-size: 12px; margin-right: 5px; }
+                .subtype-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; background: #8b5cf6; color: white; font-size: 12px; }
                 .footer { text-align: center; color: #777; font-size: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }
                 .btn { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+                .highlight { background: #fef3c7; padding: 2px 6px; border-radius: 3px; }
             </style>
         </head>
         <body>
@@ -116,7 +120,7 @@ class EmailNotifier {
                 <div class="content">
                     <div class="info-box">
                         <p><span class="label">Título:</span><br>
-                        <strong>' . htmlspecialchars($data['titulo']) . '</strong></p>
+                        <strong style="font-size: 18px;">' . htmlspecialchars($data['titulo']) . '</strong></p>
                     </div>
                     
                     <div class="info-box">
@@ -132,19 +136,45 @@ class EmailNotifier {
                     
                     <div class="info-box">
                         <p><span class="label">Prioridad:</span> <span class="priority-badge">' . $prioridadTexto . '</span></p>
-                        <p><span class="label">Estado:</span> <span class="value">Abierta</span></p>
-                        ' . (!empty($data['tipo_nombre']) ? '<p><span class="label">Tipo:</span> <span class="value">' . htmlspecialchars($data['tipo_nombre']) . '</span></p>' : '') . '
+                        <p><span class="label">Estado:</span> <span class="value">Abierta</span></p>';
+        
+        // Tipo y Subtipo en la misma línea con badges
+        if (!empty($data['tipo_nombre']) || !empty($data['subtipo_nombre'])) {
+            $html .= '<p><span class="label">Categoría:</span><br>';
+            
+            if (!empty($data['tipo_nombre'])) {
+                $html .= '<span class="type-badge">📁 ' . htmlspecialchars($data['tipo_nombre']) . '</span>';
+            }
+            
+            if (!empty($data['subtipo_nombre'])) {
+                $html .= '<span class="subtype-badge">🔖 ' . htmlspecialchars($data['subtipo_nombre']) . '</span>';
+            }
+            
+            $html .= '</p>';
+        }
+        
+        $html .= '
                     </div>
                     
                     <div style="text-align: center;">
-                        <a href="http://localhost/clinicacaritafeliz-gestion/views/dashboard.php" class="btn">Ver en el Dashboard</a>
+                        <a href="http://localhost/clinicacaritafeliz-gestion/views/dashboard.php" class="btn">📊 Ver en el Dashboard</a>
+                    </div>
+                    
+                    <div style="background: #fef3c7; padding: 15px; border-radius: 5px; margin-top: 20px; border-left: 4px solid #f59e0b;">
+                        <p style="margin: 0; font-size: 14px; color: #92400e;">
+                            <strong>⚡ Acción requerida:</strong> Por favor, revisa esta incidencia lo antes posible y asigna un técnico si es necesario.
+                        </p>
                     </div>
                 </div>
                 
                 <div class="footer">
-                    <p>Este es un mensaje automático del Sistema de Gestión de TI</p>
-                    <p>Clínica Carita Feliz - Departamento de Tecnología</p>
-                    <p>Por favor, no responda a este correo</p>
+                    <p style="margin: 5px 0;">Este es un mensaje automático del Sistema de Gestión de TI</p>
+                    <p style="margin: 5px 0;"><strong>Clínica Carita Feliz</strong> - Departamento de Tecnología</p>
+                    <p style="margin: 5px 0; color: #999;">Por favor, no responda a este correo</p>
+                    <p style="margin-top: 15px; font-size: 11px; color: #999;">
+                        Si tienes problemas con el enlace, copia y pega esta URL en tu navegador:<br>
+                        <span style="color: #667eea;">http://localhost/clinicacaritafeliz-gestion/views/dashboard.php</span>
+                    </p>
                 </div>
             </div>
         </body>
@@ -159,24 +189,52 @@ class EmailNotifier {
     private function generarTextoPlano($data) {
         $prioridadTexto = $this->obtenerTextoPrioridad($data['prioridad']);
         
-        $texto = "NUEVA INCIDENCIA REPORTADA\n";
-        $texto .= "Sistema de Gestión de TI - Clínica Carita Feliz\n";
-        $texto .= "==========================================\n\n";
-        $texto .= "TÍTULO: " . $data['titulo'] . "\n\n";
-        $texto .= "DESCRIPCIÓN:\n" . $data['descripcion'] . "\n\n";
-        $texto .= "REPORTADO POR: " . $data['nombre_reporta'] . "\n";
-        $texto .= "EMAIL: " . $data['email_reporta'] . "\n";
-        $texto .= "FECHA: " . date('d/m/Y H:i:s') . "\n\n";
-        $texto .= "PRIORIDAD: " . $prioridadTexto . "\n";
-        $texto .= "ESTADO: Abierta\n";
+        $texto = "╔══════════════════════════════════════════════════════╗\n";
+        $texto .= "║        NUEVA INCIDENCIA REPORTADA                    ║\n";
+        $texto .= "║   Sistema de Gestión de TI - Clínica Carita Feliz   ║\n";
+        $texto .= "╚══════════════════════════════════════════════════════╝\n\n";
+        
+        $texto .= "TÍTULO: " . $data['titulo'] . "\n";
+        $texto .= "══════════════════════════════════════════════════════\n\n";
+        
+        $texto .= "DESCRIPCIÓN:\n";
+        $texto .= $data['descripcion'] . "\n\n";
+        
+        $texto .= "══════════════════════════════════════════════════════\n";
+        $texto .= "INFORMACIÓN DEL REPORTE\n";
+        $texto .= "══════════════════════════════════════════════════════\n";
+        $texto .= "Reportado por: " . $data['nombre_reporta'] . "\n";
+        $texto .= "Email: " . $data['email_reporta'] . "\n";
+        $texto .= "Fecha: " . date('d/m/Y H:i:s') . "\n\n";
+        
+        $texto .= "══════════════════════════════════════════════════════\n";
+        $texto .= "CLASIFICACIÓN\n";
+        $texto .= "══════════════════════════════════════════════════════\n";
+        $texto .= "Prioridad: " . $prioridadTexto . "\n";
+        $texto .= "Estado: Abierta\n";
         
         if (!empty($data['tipo_nombre'])) {
-            $texto .= "TIPO: " . $data['tipo_nombre'] . "\n";
+            $texto .= "Tipo: " . $data['tipo_nombre'] . "\n";
         }
         
-        $texto .= "\n==========================================\n";
+        // NUEVO: Incluir subtipo
+        if (!empty($data['subtipo_nombre'])) {
+            $texto .= "Subtipo: " . $data['subtipo_nombre'] . "\n";
+        }
+        
+        $texto .= "\n══════════════════════════════════════════════════════\n";
+        $texto .= "ACCIÓN REQUERIDA\n";
+        $texto .= "══════════════════════════════════════════════════════\n";
+        $texto .= "Por favor, revisa esta incidencia lo antes posible y\n";
+        $texto .= "asigna un técnico si es necesario.\n\n";
+        
+        $texto .= "Accede al dashboard en:\n";
+        $texto .= "http://localhost/clinicacaritafeliz-gestion/views/dashboard.php\n\n";
+        
+        $texto .= "══════════════════════════════════════════════════════\n";
         $texto .= "Este es un mensaje automático.\n";
         $texto .= "Por favor, no responda a este correo.\n";
+        $texto .= "══════════════════════════════════════════════════════\n";
         
         return $texto;
     }

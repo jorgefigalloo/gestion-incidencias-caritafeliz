@@ -1,6 +1,5 @@
 <?php
 class Incidencia {
-    // Conexión a la base de datos y nombre de la tabla
     private $conn;
     private $table_name = "incidencias";
 
@@ -10,6 +9,7 @@ class Incidencia {
     public $descripcion;
     public $respuesta_solucion;
     public $id_tipo_incidencia;
+    public $id_subtipo_incidencia; // NUEVO
     public $id_usuario_reporta;
     public $nombre_reporta;
     public $email_reporta;
@@ -19,20 +19,19 @@ class Incidencia {
     public $fecha_cierre;
     public $id_usuario_tecnico;
 
-    // Constructor con $db como conexión a la base de datos
     public function __construct($db) {
         $this->conn = $db;
     }
 
-    // Leer incidencias
+    // Leer incidencias con información relacionada incluyendo subtipos
     function read() {
-        // Consulta para leer incidencias con información relacionada
         $query = "SELECT 
                     i.id_incidencia,
                     i.titulo,
                     i.descripcion,
                     i.respuesta_solucion,
                     i.id_tipo_incidencia,
+                    i.id_subtipo_incidencia,
                     i.id_usuario_reporta,
                     i.nombre_reporta,
                     i.email_reporta,
@@ -42,39 +41,44 @@ class Incidencia {
                     i.fecha_cierre,
                     i.id_usuario_tecnico,
                     ti.nombre as tipo_nombre,
+                    si.nombre as subtipo_nombre,
                     ur.nombre_completo as reporta_usuario,
                     ut.nombre_completo as tecnico_asignado,
                     a.nombre_area,
                     s.nombre_sede
                   FROM " . $this->table_name . " i
                   LEFT JOIN tipos_incidencia ti ON i.id_tipo_incidencia = ti.id_tipo_incidencia
+                  LEFT JOIN subtipos_incidencias si ON i.id_subtipo_incidencia = si.id_subtipo_incidencia
                   LEFT JOIN usuarios ur ON i.id_usuario_reporta = ur.id_usuario
                   LEFT JOIN usuarios ut ON i.id_usuario_tecnico = ut.id_usuario
                   LEFT JOIN areas a ON ur.id_area = a.id_area
                   LEFT JOIN sedes s ON a.id_sede = s.id_sede
                   ORDER BY i.fecha_reporte DESC";
 
-        // Preparar declaración
         $stmt = $this->conn->prepare($query);
 
-        // Ejecutar consulta
         try {
             $stmt->execute();
             return $stmt;
         } catch (PDOException $e) {
+            error_log("Error en Incidencia::read(): " . $e->getMessage());
             return false;
         }
     }
 
-    // Crear incidencia
+    // Crear incidencia con subtipo
     function create() {
-        // Consulta para crear
         $query = "INSERT INTO " . $this->table_name . "
-                  SET titulo=:titulo, descripcion=:descripcion, id_tipo_incidencia=:id_tipo_incidencia,
-                      id_usuario_reporta=:id_usuario_reporta, nombre_reporta=:nombre_reporta,
-                      email_reporta=:email_reporta, estado=:estado, prioridad=:prioridad";
+                  SET titulo=:titulo, 
+                      descripcion=:descripcion, 
+                      id_tipo_incidencia=:id_tipo_incidencia,
+                      id_subtipo_incidencia=:id_subtipo_incidencia,
+                      id_usuario_reporta=:id_usuario_reporta, 
+                      nombre_reporta=:nombre_reporta,
+                      email_reporta=:email_reporta, 
+                      estado=:estado, 
+                      prioridad=:prioridad";
 
-        // Preparar declaración
         $stmt = $this->conn->prepare($query);
 
         // Sanear datos
@@ -89,31 +93,32 @@ class Incidencia {
         $stmt->bindParam(":titulo", $this->titulo);
         $stmt->bindParam(":descripcion", $this->descripcion);
         $stmt->bindParam(":id_tipo_incidencia", $this->id_tipo_incidencia);
+        $stmt->bindParam(":id_subtipo_incidencia", $this->id_subtipo_incidencia); // NUEVO
         $stmt->bindParam(":id_usuario_reporta", $this->id_usuario_reporta);
         $stmt->bindParam(":nombre_reporta", $this->nombre_reporta);
         $stmt->bindParam(":email_reporta", $this->email_reporta);
         $stmt->bindParam(":estado", $this->estado);
         $stmt->bindParam(":prioridad", $this->prioridad);
 
-        // Ejecutar consulta
         try {
             if ($stmt->execute()) {
                 return true;
             }
             return false;
         } catch (PDOException $e) {
+            error_log("Error en Incidencia::create(): " . $e->getMessage());
             return false;
         }
     }
 
-    // Actualizar incidencia
+    // Actualizar incidencia con subtipo
     function update() {
-        // Consulta para actualizar
         $query = "UPDATE " . $this->table_name . "
                   SET titulo = :titulo,
                       descripcion = :descripcion,
                       respuesta_solucion = :respuesta_solucion,
                       id_tipo_incidencia = :id_tipo_incidencia,
+                      id_subtipo_incidencia = :id_subtipo_incidencia,
                       estado = :estado,
                       prioridad = :prioridad,
                       id_usuario_tecnico = :id_usuario_tecnico,
@@ -127,7 +132,6 @@ class Incidencia {
 
         $query .= " WHERE id_incidencia = :id_incidencia";
 
-        // Preparar declaración
         $stmt = $this->conn->prepare($query);
 
         // Sanear datos
@@ -145,6 +149,7 @@ class Incidencia {
         $stmt->bindParam(':descripcion', $this->descripcion);
         $stmt->bindParam(':respuesta_solucion', $this->respuesta_solucion);
         $stmt->bindParam(':id_tipo_incidencia', $this->id_tipo_incidencia);
+        $stmt->bindParam(':id_subtipo_incidencia', $this->id_subtipo_incidencia); // NUEVO
         $stmt->bindParam(':estado', $this->estado);
         $stmt->bindParam(':prioridad', $this->prioridad);
         $stmt->bindParam(':id_usuario_tecnico', $this->id_usuario_tecnico);
@@ -152,51 +157,44 @@ class Incidencia {
         $stmt->bindParam(':email_reporta', $this->email_reporta);
         $stmt->bindParam(':id_incidencia', $this->id_incidencia);
 
-        // Ejecutar consulta
         try {
             if ($stmt->execute()) {
                 return true;
             }
             return false;
         } catch (PDOException $e) {
+            error_log("Error en Incidencia::update(): " . $e->getMessage());
             return false;
         }
     }
 
     // Eliminar incidencia
     function delete() {
-        // Consulta para eliminar
         $query = "DELETE FROM " . $this->table_name . " WHERE id_incidencia = ?";
-
-        // Preparar declaración
         $stmt = $this->conn->prepare($query);
-
-        // Sanear datos
         $this->id_incidencia = htmlspecialchars(strip_tags($this->id_incidencia));
-
-        // Enlazar id del registro a eliminar
         $stmt->bindParam(1, $this->id_incidencia);
 
-        // Ejecutar consulta
         try {
             if ($stmt->execute()) {
                 return true;
             }
             return false;
         } catch (PDOException $e) {
+            error_log("Error en Incidencia::delete(): " . $e->getMessage());
             return false;
         }
     }
 
-    // Buscar incidencias
+    // Buscar incidencias incluyendo subtipos
     function search($keywords) {
-        // Consulta para buscar
         $query = "SELECT 
                     i.id_incidencia,
                     i.titulo,
                     i.descripcion,
                     i.respuesta_solucion,
                     i.id_tipo_incidencia,
+                    i.id_subtipo_incidencia,
                     i.id_usuario_reporta,
                     i.nombre_reporta,
                     i.email_reporta,
@@ -206,45 +204,44 @@ class Incidencia {
                     i.fecha_cierre,
                     i.id_usuario_tecnico,
                     ti.nombre as tipo_nombre,
+                    si.nombre as subtipo_nombre,
                     ur.nombre_completo as reporta_usuario,
                     ut.nombre_completo as tecnico_asignado
                   FROM " . $this->table_name . " i
                   LEFT JOIN tipos_incidencia ti ON i.id_tipo_incidencia = ti.id_tipo_incidencia
+                  LEFT JOIN subtipos_incidencias si ON i.id_subtipo_incidencia = si.id_subtipo_incidencia
                   LEFT JOIN usuarios ur ON i.id_usuario_reporta = ur.id_usuario
                   LEFT JOIN usuarios ut ON i.id_usuario_tecnico = ut.id_usuario
                   WHERE i.titulo LIKE ? OR i.descripcion LIKE ? OR i.nombre_reporta LIKE ?
                   ORDER BY i.fecha_reporte DESC";
 
-        // Preparar declaración
         $stmt = $this->conn->prepare($query);
 
-        // Sanear
         $keywords = htmlspecialchars(strip_tags($keywords));
         $keywords = "%{$keywords}%";
 
-        // Enlazar
         $stmt->bindParam(1, $keywords);
         $stmt->bindParam(2, $keywords);
         $stmt->bindParam(3, $keywords);
 
-        // Ejecutar consulta
         try {
             $stmt->execute();
             return $stmt;
         } catch (PDOException $e) {
+            error_log("Error en Incidencia::search(): " . $e->getMessage());
             return false;
         }
     }
 
-    // Leer una incidencia específica
+    // Leer una incidencia específica con subtipo
     function readOne() {
-        // Consulta para leer una sola incidencia
         $query = "SELECT 
                     i.id_incidencia,
                     i.titulo,
                     i.descripcion,
                     i.respuesta_solucion,
                     i.id_tipo_incidencia,
+                    i.id_subtipo_incidencia,
                     i.id_usuario_reporta,
                     i.nombre_reporta,
                     i.email_reporta,
@@ -254,12 +251,14 @@ class Incidencia {
                     i.fecha_cierre,
                     i.id_usuario_tecnico,
                     ti.nombre as tipo_nombre,
+                    si.nombre as subtipo_nombre,
                     ur.nombre_completo as reporta_usuario,
                     ut.nombre_completo as tecnico_asignado,
                     a.nombre_area,
                     s.nombre_sede
                   FROM " . $this->table_name . " i
                   LEFT JOIN tipos_incidencia ti ON i.id_tipo_incidencia = ti.id_tipo_incidencia
+                  LEFT JOIN subtipos_incidencias si ON i.id_subtipo_incidencia = si.id_subtipo_incidencia
                   LEFT JOIN usuarios ur ON i.id_usuario_reporta = ur.id_usuario
                   LEFT JOIN usuarios ut ON i.id_usuario_tecnico = ut.id_usuario
                   LEFT JOIN areas a ON ur.id_area = a.id_area
@@ -267,25 +266,19 @@ class Incidencia {
                   WHERE i.id_incidencia = ?
                   LIMIT 0,1";
 
-        // Preparar declaración
         $stmt = $this->conn->prepare($query);
-
-        // Enlazar ID
         $stmt->bindParam(1, $this->id_incidencia);
 
-        // Ejecutar consulta
         try {
             $stmt->execute();
-
-            // Obtener fila recuperada
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($row) {
-                // Establecer valores de las propiedades del objeto
                 $this->titulo = $row['titulo'];
                 $this->descripcion = $row['descripcion'];
                 $this->respuesta_solucion = $row['respuesta_solucion'];
                 $this->id_tipo_incidencia = $row['id_tipo_incidencia'];
+                $this->id_subtipo_incidencia = $row['id_subtipo_incidencia']; // NUEVO
                 $this->id_usuario_reporta = $row['id_usuario_reporta'];
                 $this->nombre_reporta = $row['nombre_reporta'];
                 $this->email_reporta = $row['email_reporta'];
@@ -298,11 +291,12 @@ class Incidencia {
             }
             return false;
         } catch (PDOException $e) {
+            error_log("Error en Incidencia::readOne(): " . $e->getMessage());
             return false;
         }
     }
 
-    // Obtener estadísticas
+    // Obtener estadísticas incluyendo subtipos
     function getStats() {
         try {
             $stats = array();
@@ -335,8 +329,21 @@ class Incidencia {
             $stmt->execute();
             $stats['por_tipo'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            // NUEVO: Por subtipo (top 10)
+            $query = "SELECT si.nombre, COUNT(i.id_incidencia) as count 
+                     FROM subtipos_incidencias si 
+                     LEFT JOIN " . $this->table_name . " i ON si.id_subtipo_incidencia = i.id_subtipo_incidencia 
+                     WHERE si.estado = 'activo'
+                     GROUP BY si.id_subtipo_incidencia, si.nombre
+                     ORDER BY count DESC
+                     LIMIT 10";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+            $stats['por_subtipo'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
             return $stats;
         } catch (PDOException $e) {
+            error_log("Error en Incidencia::getStats(): " . $e->getMessage());
             return false;
         }
     }

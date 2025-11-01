@@ -15,7 +15,8 @@ require_once '../models/database.php';
 require_once '../models/Incidencia.php';
 require_once '../models/Usuario.php';
 require_once '../models/TipoIncidencia.php';
-require_once '../../includes/email_notifier.php'; // NUEVO: Incluir clase de email
+require_once '../models/SubtipoIncidencia.php'; // NUEVO
+require_once '../../includes/email_notifier.php';
 
 function sendResponse($code, $data) {
     http_response_code($code);
@@ -48,6 +49,7 @@ try {
     $incidencia = new Incidencia($db);
     $usuario = new Usuario($db);
     $tipoIncidencia = new TipoIncidencia($db);
+    $subtipoIncidencia = new SubtipoIncidencia($db); // NUEVO
     
 } catch (Exception $e) {
     error_log("Error al inicializar conexión: " . $e->getMessage());
@@ -123,6 +125,7 @@ switch ($request_method) {
                             "descripcion" => $incidencia->descripcion,
                             "respuesta_solucion" => $incidencia->respuesta_solucion,
                             "id_tipo_incidencia" => $incidencia->id_tipo_incidencia,
+                            "id_subtipo_incidencia" => $incidencia->id_subtipo_incidencia, // NUEVO
                             "id_usuario_reporta" => $incidencia->id_usuario_reporta,
                             "nombre_reporta" => $incidencia->nombre_reporta,
                             "email_reporta" => $incidencia->email_reporta,
@@ -160,6 +163,8 @@ switch ($request_method) {
                                 "respuesta_solucion" => html_entity_decode($row['respuesta_solucion'] ?? ''),
                                 "id_tipo_incidencia" => $row['id_tipo_incidencia'],
                                 "tipo_nombre" => $row['tipo_nombre'],
+                                "id_subtipo_incidencia" => $row['id_subtipo_incidencia'], // NUEVO
+                                "subtipo_nombre" => $row['subtipo_nombre'] ?? null, // NUEVO
                                 "id_usuario_reporta" => $row['id_usuario_reporta'],
                                 "nombre_reporta" => html_entity_decode($row['nombre_reporta'] ?? ''),
                                 "email_reporta" => $row['email_reporta'],
@@ -230,6 +235,7 @@ switch ($request_method) {
             $incidencia->titulo = trim($data->titulo);
             $incidencia->descripcion = trim($data->descripcion);
             $incidencia->id_tipo_incidencia = isset($data->id_tipo_incidencia) ? intval($data->id_tipo_incidencia) : null;
+            $incidencia->id_subtipo_incidencia = isset($data->id_subtipo_incidencia) ? intval($data->id_subtipo_incidencia) : null; // NUEVO
             $incidencia->id_usuario_reporta = isset($data->id_usuario_reporta) ? intval($data->id_usuario_reporta) : null;
             $incidencia->nombre_reporta = isset($data->nombre_reporta) ? trim($data->nombre_reporta) : '';
             $incidencia->email_reporta = isset($data->email_reporta) ? trim($data->email_reporta) : '';
@@ -237,7 +243,7 @@ switch ($request_method) {
             $incidencia->prioridad = isset($data->prioridad) ? $data->prioridad : 'media';
 
             if ($incidencia->create()) {
-                // NUEVO: Enviar notificación por email
+                // Enviar notificación por email
                 try {
                     // Obtener nombre del tipo de incidencia si existe
                     $tipoNombre = '';
@@ -248,6 +254,15 @@ switch ($request_method) {
                         }
                     }
                     
+                    // NUEVO: Obtener nombre del subtipo si existe
+                    $subtipoNombre = '';
+                    if ($incidencia->id_subtipo_incidencia) {
+                        $subtipoIncidencia->id_subtipo_incidencia = $incidencia->id_subtipo_incidencia;
+                        if ($subtipoIncidencia->readOne()) {
+                            $subtipoNombre = $subtipoIncidencia->nombre;
+                        }
+                    }
+                    
                     $emailNotifier = new EmailNotifier();
                     $emailData = array(
                         'titulo' => $incidencia->titulo,
@@ -255,7 +270,8 @@ switch ($request_method) {
                         'nombre_reporta' => $incidencia->nombre_reporta,
                         'email_reporta' => $incidencia->email_reporta,
                         'prioridad' => $incidencia->prioridad,
-                        'tipo_nombre' => $tipoNombre
+                        'tipo_nombre' => $tipoNombre,
+                        'subtipo_nombre' => $subtipoNombre // NUEVO
                     );
                     
                     $emailEnviado = $emailNotifier->enviarNotificacionNuevaIncidencia($emailData);
@@ -267,7 +283,6 @@ switch ($request_method) {
                     }
                     
                 } catch (Exception $emailException) {
-                    // No fallar la creación si falla el email, solo registrar el error
                     error_log("Error al enviar email de notificación: " . $emailException->getMessage());
                 }
                 
@@ -320,6 +335,7 @@ switch ($request_method) {
             $incidencia->descripcion = isset($data->descripcion) ? trim($data->descripcion) : '';
             $incidencia->respuesta_solucion = isset($data->respuesta_solucion) ? trim($data->respuesta_solucion) : '';
             $incidencia->id_tipo_incidencia = isset($data->id_tipo_incidencia) ? intval($data->id_tipo_incidencia) : null;
+            $incidencia->id_subtipo_incidencia = isset($data->id_subtipo_incidencia) ? intval($data->id_subtipo_incidencia) : null; // NUEVO
             $incidencia->estado = isset($data->estado) ? $data->estado : '';
             $incidencia->prioridad = isset($data->prioridad) ? $data->prioridad : '';
             $incidencia->id_usuario_tecnico = isset($data->id_usuario_tecnico) ? intval($data->id_usuario_tecnico) : null;

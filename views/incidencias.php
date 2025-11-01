@@ -101,7 +101,7 @@ include '../includes/header.php';
                         Título
                     </th>
                     <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        Tipo
+                        Tipo / Subtipo
                     </th>
                     <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                         Reportado por
@@ -182,6 +182,14 @@ include '../includes/header.php';
                         <option value="">Seleccionar tipo...</option>
                     </select>
                 </div>
+            </div>
+            
+            <!-- NUEVO: Campo de Subtipo -->
+            <div id="modal-subtipo-container" class="mb-4 hidden">
+                <label for="incidencia-subtipo" class="block text-gray-700 font-semibold mb-2">Subtipo Específico</label>
+                <select id="incidencia-subtipo" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Seleccionar subtipo...</option>
+                </select>
             </div>
             
             <div class="mb-4">
@@ -464,6 +472,17 @@ include '../includes/header.php';
                 const reportadoPor = incidencia.reporta_usuario || incidencia.nombre_reporta || 'Sin especificar';
                 const tecnicoAsignado = incidencia.tecnico_asignado || 'Sin asignar';
                 
+                // NUEVO: Mostrar tipo y subtipo
+                let tipoSubtipoHtml = '';
+                if (incidencia.tipo_nombre) {
+                    tipoSubtipoHtml = `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">${escapeHtml(incidencia.tipo_nombre)}</span>`;
+                    if (incidencia.subtipo_nombre) {
+                        tipoSubtipoHtml += `<br><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium mt-1 inline-block">${escapeHtml(incidencia.subtipo_nombre)}</span>`;
+                    }
+                } else {
+                    tipoSubtipoHtml = '<span class="text-gray-500 text-xs">Sin tipo</span>';
+                }
+                
                 const row = document.createElement('tr');
                 row.classList.add('hover:bg-gray-50', 'transition', 'duration-150', 'ease-in-out', 'border-b', 'border-gray-200');
                 row.innerHTML = `
@@ -475,9 +494,7 @@ include '../includes/header.php';
                         </div>
                     </td>
                     <td class="px-5 py-5 text-sm">
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                            ${escapeHtml(incidencia.tipo_nombre || 'Sin tipo')}
-                        </span>
+                        ${tipoSubtipoHtml}
                     </td>
                     <td class="px-5 py-5 text-sm">
                         <div class="font-medium">${escapeHtml(reportadoPor)}</div>
@@ -615,8 +632,49 @@ include '../includes/header.php';
                 modalTipoSelect.innerHTML += `<option value="${tipo.id_tipo_incidencia}">${escapeHtml(tipo.nombre)}</option>`;
             });
             
+            // NUEVO: Agregar event listener para cargar subtipos en el modal
+            modalTipoSelect.addEventListener('change', loadModalSubtiposByTipo);
+            
         } catch (error) {
             console.error('Error al cargar tipos:', error);
+        }
+    }
+
+    // NUEVA FUNCIÓN: Cargar subtipos en el modal según el tipo seleccionado
+    async function loadModalSubtiposByTipo() {
+        const tipoSelect = document.getElementById('incidencia-tipo');
+        const subtipoSelect = document.getElementById('incidencia-subtipo');
+        const subtipoContainer = document.getElementById('modal-subtipo-container');
+        
+        const tipoId = tipoSelect.value;
+        
+        // Si no hay tipo seleccionado, ocultar subtipos
+        if (!tipoId) {
+            subtipoContainer.classList.add('hidden');
+            subtipoSelect.innerHTML = '<option value="">Selecciona primero un tipo...</option>';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`../api/controllers/subtipos_incidencias.php?action=by_tipo&id_tipo=${tipoId}`);
+            const result = await response.json();
+            
+            subtipoSelect.innerHTML = '<option value="">Seleccionar subtipo...</option>';
+            
+            if (result.subtipos && result.subtipos.length > 0) {
+                result.subtipos.forEach(subtipo => {
+                    const option = document.createElement('option');
+                    option.value = subtipo.id_subtipo_incidencia;
+                    option.textContent = subtipo.nombre;
+                    subtipoSelect.appendChild(option);
+                });
+                subtipoContainer.classList.remove('hidden');
+            } else {
+                subtipoContainer.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error al cargar subtipos:', error);
+            subtipoContainer.classList.add('hidden');
         }
     }
 
@@ -721,6 +779,7 @@ include '../includes/header.php';
     addIncidenciaBtn.addEventListener('click', () => {
         incidenciaForm.reset();
         incidenciaIdInput.value = '';
+        document.getElementById('modal-subtipo-container').classList.add('hidden');
         modalTitle.textContent = 'Nueva Incidencia';
         incidenciaModal.classList.remove('hidden');
         incidenciaModal.classList.add('flex');
@@ -776,6 +835,14 @@ include '../includes/header.php';
                 document.getElementById('incidencia-tecnico').value = incidencia.id_usuario_tecnico || '';
                 document.getElementById('incidencia-solucion').value = incidencia.respuesta_solucion || '';
                 
+                // NUEVO: Cargar subtipo si existe
+                if (incidencia.id_tipo_incidencia) {
+                    await loadModalSubtiposByTipo();
+                    if (incidencia.id_subtipo_incidencia) {
+                        document.getElementById('incidencia-subtipo').value = incidencia.id_subtipo_incidencia;
+                    }
+                }
+                
                 modalTitle.textContent = 'Editar Incidencia';
                 incidenciaModal.classList.remove('hidden');
                 incidenciaModal.classList.add('flex');
@@ -786,7 +853,7 @@ include '../includes/header.php';
         }
     }
 
-    // Función para ver detalles (simple alert por ahora)
+    // Función para ver detalles
     async function viewIncidenciaDetails(id) {
         try {
             const response = await fetch(`${API_URL}?action=single&id=${id}`);
@@ -799,6 +866,8 @@ include '../includes/header.php';
                 const details = `
 ID: #${incidencia.id_incidencia}
 Título: ${incidencia.titulo}
+Tipo: ${incidencia.tipo_nombre || 'Sin tipo'}
+${incidencia.subtipo_nombre ? `Subtipo: ${incidencia.subtipo_nombre}` : ''}
 Descripción: ${incidencia.descripcion}
 Estado: ${incidencia.estado}
 Prioridad: ${incidencia.prioridad}
@@ -821,6 +890,7 @@ ${incidencia.respuesta_solucion ? `\nSolución: ${incidencia.respuesta_solucion}
             titulo: document.getElementById('incidencia-titulo').value.trim(),
             descripcion: document.getElementById('incidencia-descripcion').value.trim(),
             id_tipo_incidencia: document.getElementById('incidencia-tipo').value || null,
+            id_subtipo_incidencia: document.getElementById('incidencia-subtipo').value || null,
             nombre_reporta: document.getElementById('incidencia-nombre-reporta').value.trim(),
             email_reporta: document.getElementById('incidencia-email-reporta').value.trim(),
             estado: document.getElementById('incidencia-estado').value,

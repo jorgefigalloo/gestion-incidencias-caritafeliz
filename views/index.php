@@ -669,20 +669,21 @@
         });
 
         // Manejo del formulario
-        incidentForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-                            const data = {
-                    titulo: formData.get('titulo').trim(),
-                    descripcion: formData.get('descripcion').trim(),
-                    nombre_reporta: formData.get('nombre_reporta').trim(),
-                    email_reporta: formData.get('email_reporta').trim(),
-                    id_tipo_incidencia: formData.get('tipo_incidencia') || null,
-                    id_subtipo_incidencia: formData.get('subtipo_incidencia') || null, // NUEVO
-                    prioridad: formData.get('prioridad') || 'media',
-                    estado: 'abierta',
-                    id_usuario_reporta: currentUser ? currentUser.id : null
-                };
+                        incidentForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(incidentForm); // ESTA LÍNEA DEBE ESTAR AQUÍ
+                    const data = {
+                        titulo: formData.get('titulo').trim(),
+                        descripcion: formData.get('descripcion').trim(),
+                        nombre_reporta: formData.get('nombre_reporta').trim(),
+                        email_reporta: formData.get('email_reporta').trim(),
+                        id_tipo_incidencia: formData.get('tipo_incidencia') || null,
+                        id_subtipo_incidencia: formData.get('subtipo_incidencia') || null,
+                        prioridad: formData.get('prioridad') || 'media',
+                        estado: 'abierta',
+                        id_usuario_reporta: currentUser ? currentUser.id : null
+                    };
 
             // Validaciones
             if (!data.titulo) {
